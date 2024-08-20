@@ -10,6 +10,7 @@ load_dotenv()
 TOKEN = os.getenv('TOKEN')
 BOT_USERNAME =  os.getenv('BOT_USERNAME')
 
+user_botType = {}
 user_histories = {}
 
 #commands
@@ -37,12 +38,14 @@ To look at the info of each bot
 
 
 async def adv_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # add code
+    user_id = update.message.from_user.id
+    user_botType[user_id] = 1  # 1 represents the advanced bot
     await update.message.reply_text("Changed to advanced bot.")
 
 
 async def dumb_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    #add code
+    user_id = update.message.from_user.id
+    user_botType[user_id] = 2  # 2 represents the dumb bot
     await update.message.reply_text("Changed to dumb bot.")
 
 
@@ -72,14 +75,8 @@ async def history_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def type_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.chat.id
-    history = user_histories[user_id]
-    
-    if not history:
-        response = "No message history found."
-    else:
-        response = user_histories[user_id]
-
-    await update.message.reply_text(response)
+    botType = user_botType[user_id]  
+    await update.message.reply_text(botType)
 
 
 #responses
