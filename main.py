@@ -4,14 +4,14 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from telegram.constants import ChatAction
 from ChatBotModel import get_message
+from OwnBotModel import get_response
+import message_db
 
 load_dotenv()
 
 TOKEN = os.getenv('TOKEN')
 BOT_USERNAME =  os.getenv('BOT_USERNAME')
 
-user_botType = {}
-user_histories = {}
 
 #commands
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -39,13 +39,13 @@ To look at the info of each bot
 
 async def adv_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
-    user_botType[user_id] = 1  # 1 represents the advanced bot
+    message_db.save_bot_type(user_id, 1)  # 1 represents the advanced bot
     await update.message.reply_text("Changed to advanced bot.")
 
 
 async def dumb_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
-    user_botType[user_id] = 2  # 2 represents the dumb bot
+    message_db.save_bot_type(user_id, 2)  # 2 represents the dumb bot
     await update.message.reply_text("Changed to dumb bot.")
 
 
@@ -63,19 +63,19 @@ async def adv_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # for debugging
 async def history_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.chat.id
-    history = user_histories[user_id]
+    history = message_db.get_history(user_id)
     
     if not history:
         response = "No message history found."
     else:
-        response = user_histories[user_id]
+        response = message_db.get_history(user_id)
 
     await update.message.reply_text(response)
 
 
 async def type_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.chat.id
-    botType = user_botType[user_id]  
+    botType = message_db.get_bot_type(user_id)
     await update.message.reply_text(botType)
 
 
@@ -84,15 +84,19 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     message_type = update.message.chat.type
     text = update.message.text
+    bot_type = message_db.get_bot_type(user_id)
+    user_history = message_db.get_history(user_id)
 
     if message_type == 'group':
         return
     else:
-        if user_id not in user_histories:
-            user_histories[user_id] = []
-
         await update.message.chat.send_action(ChatAction.TYPING)
-        response = get_message(text,  user_histories[user_id])
+        if bot_type == 2: 
+            # to add dumb bot 
+            response = get_response(text) #this is from ownbot
+        else:
+            response = get_message(text,  user_history) #this is from dumb bot
+            message_db.save_history(user_id, user_history)
         await update.message.reply_text(response)
 
 
