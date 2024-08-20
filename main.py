@@ -10,6 +10,8 @@ load_dotenv()
 TOKEN = os.getenv('TOKEN')
 BOT_USERNAME =  os.getenv('BOT_USERNAME')
 
+user_histories = {}
+
 #commands
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Please, type '/help' for help")
@@ -55,17 +57,45 @@ async def adv_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 
+# for debugging
+async def history_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.message.chat.id
+    history = user_histories[user_id]
+    
+    if not history:
+        response = "No message history found."
+    else:
+        response = user_histories[user_id]
+
+    await update.message.reply_text(response)
+
+
+async def type_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.message.chat.id
+    history = user_histories[user_id]
+    
+    if not history:
+        response = "No message history found."
+    else:
+        response = user_histories[user_id]
+
+    await update.message.reply_text(response)
+
 
 #responses
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.message.from_user.id
     message_type = update.message.chat.type
     text = update.message.text
 
     if message_type == 'group':
         return
     else:
+        if user_id not in user_histories:
+            user_histories[user_id] = []
+
         await update.message.chat.send_action(ChatAction.TYPING)
-        response = get_message(text)
+        response = get_message(text,  user_histories[user_id])
         await update.message.reply_text(response)
 
 
@@ -79,6 +109,10 @@ if __name__ == '__main__':
     app.add_handler(CommandHandler('dumb', dumb_command))
     app.add_handler(CommandHandler('adv_info', adv_info_command))
     app.add_handler(CommandHandler('dumb_info', dumb_info_command))
+
+    # for debugging
+    app.add_handler(CommandHandler('history', history_command))
+    app.add_handler(CommandHandler('type', type_command))
 
     app.add_handler(MessageHandler(filters.TEXT, handle_message))
     app.run_polling(poll_interval=3)

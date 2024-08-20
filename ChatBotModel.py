@@ -69,18 +69,18 @@ def generate_response(input_text):
 # In[ ]:
 #for telegram
 
-def get_message(text):
-    if len(conversation_history) > 8:
-        conversation_history.pop(0)
-        conversation_history.pop(0)
+def get_message(text, history):
+    if len(history) > 8:
+        history.pop(0)
+        history.pop(0)
   
-    conversation_history.append(text)
+    history.append(text)
 
-    history_string = "\n".join(conversation_history)
+    history_string = "\n".join(history)
     inputs = tokenizer.encode_plus(history_string, return_tensors="pt", max_length=128)
 
     outputs = model.generate(**inputs)
     response = tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
-    conversation_history.append(response)
+    history.append(response)
     
     return response
